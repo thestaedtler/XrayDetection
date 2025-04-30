@@ -1,0 +1,5 @@
+name: XrayDetection
+author: intagonic
+version: '1.0-SNAPSHOT'
+main: org.cl.xrayDetection.XrayDetection
+api-version: '1.21'
