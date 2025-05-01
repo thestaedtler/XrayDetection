@@ -1,12 +1,11 @@
 package org.cl.xrayDetection;
 
-import com.google.common.collect.ImmutableSet;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -20,7 +19,9 @@ import java.util.Set;
 public record ConfigCache(
         Set<Material> materials,
         int maxVeinIterations,
-        boolean consoleLogging
+        boolean consoleLogging,
+        String hoverMessage,
+        String clickCommand
 ) {
     public static ConfigCache cache() throws IOException {
         XrayDetection plugin = JavaPlugin.getPlugin(XrayDetection.class);
@@ -43,23 +44,21 @@ public record ConfigCache(
             obj = JsonParser.parseReader(reader).getAsJsonObject();
         }
 
-        JsonArray array = obj.getAsJsonArray("targets");
-        ImmutableSet.Builder<Material> targetSetBuilder = new ImmutableSet.Builder<>();
-        for (JsonElement rawTarget : array) {
-            Material mat = Material.getMaterial(rawTarget.getAsString());
+        JsonArray materialArray = obj.getAsJsonArray("targets");
+        Set<Material> materialSet = XrayDetection.GSON.fromJson(materialArray, new TypeToken<Set<Material>>() {}.getType());
+        materialSet.remove(null);
 
-            if (mat == null) {
-                Bukkit.getLogger().warning("Could not recognize material " + rawTarget.getAsString() + " specified in xray-detection.json! Skipping...");
-                continue;
-            }
-
-            targetSetBuilder.add(mat);
-        }
+        JsonElement rawHover = obj.get("alert-hover-message");
+        String hover = rawHover == null ? null : rawHover.getAsString();
+        JsonElement rawClick = obj.get("alert-click-command");
+        String click = rawClick == null ? null : rawClick.getAsString();
 
         return new ConfigCache(
-                targetSetBuilder.build(),
+                materialSet,
                 Math.min(obj.get("max-vein-iterations").getAsInt(), 30),
-                obj.get("console-alerts").getAsBoolean()
+                obj.get("console-alerts").getAsBoolean(),
+                hover,
+                click
         );
     }
 }

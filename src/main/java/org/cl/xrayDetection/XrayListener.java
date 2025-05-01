@@ -5,6 +5,7 @@ import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
+import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.chat.hover.content.Text;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -23,44 +24,46 @@ import java.util.Set;
 public final class XrayListener implements Listener {
     private static final String METADATA_KEY = "accounted";
     private final XrayDetection plugin;
+    private final ConfigCache cache;
 
     XrayListener(XrayDetection plugin) {
         this.plugin = plugin;
+        this.cache = plugin.getConfigCache();
     }
 
     private void alert(Player target, Material material, boolean exposed, VeinInfo info) {
-        BaseComponent component = new ComponentBuilder()
+        ComponentBuilder builder = new ComponentBuilder()
                 .append("[!] ").color(ChatColor.RED)
                 .append(target.getName()).color(ChatColor.YELLOW)
                 .append(" found " + (exposed ? "exposed " : "")).color(ChatColor.GRAY)
                 .append(material.toString()).color(ChatColor.YELLOW)
-                .append(" (vein of " + info.amount() + (info.achievedMaxIterations() ? "+" : "") + ")").color(ChatColor.GRAY)
-                .build();
-        component.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                new Text(new ComponentBuilder("Click to teleport!")
-                        .color(ChatColor.GREEN)
-                        .build()
-                )
-        ));
-        component.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/tp " + target.getName()));
+                .append(" (vein of " + info.amount() + (info.achievedMaxIterations() ? "+" : "") + ")").color(ChatColor.GRAY);
+
+        if (cache.consoleLogging()) {
+            Bukkit.getLogger().info(builder.build().toPlainText());
+        }
+
+        BaseComponent finalComponent = builder.build();
+
+        if (cache.hoverMessage() != null) {
+            finalComponent.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(TextComponent.fromLegacy(ChatColor.translateAlternateColorCodes('&', cache.hoverMessage())))));
+        }
+
+        if (cache.clickCommand() != null) {
+            finalComponent.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, cache.clickCommand().replace("[player]", target.getName())));
+        }
 
         for (Player player : Bukkit.getOnlinePlayers()) {
             if (!player.hasPermission(XrayDetection.ALERT_PERMISSION)) {
                 continue;
             }
 
-            player.spigot().sendMessage(component);
+            player.spigot().sendMessage(finalComponent);
         }
-
-        if (!plugin.getConfigCache().consoleLogging()) {
-            return;
-        }
-
-        Bukkit.getLogger().info(component.toPlainText());
     }
 
     private boolean flags(Material material) {
-        return plugin.getConfigCache().materials().contains(material);
+        return cache.materials().contains(material);
     }
 
     // Direct
@@ -68,9 +71,9 @@ public final class XrayListener implements Listener {
     public void onTargetBreak(BlockBreakEvent event) {
         Player player = event.getPlayer();
 
-//        if (player.hasPermission(XrayDetection.BYPASS_PERMISSION)) {
-//            return;
-//        }
+        if (player.hasPermission(XrayDetection.BYPASS_PERMISSION)) {
+            return;
+        }
 
         Block block = event.getBlock();
 
@@ -78,7 +81,7 @@ public final class XrayListener implements Listener {
             return;
         }
 
-        VeinInfo info = VeinInfo.collect(block.getLocation(), plugin.getConfigCache().maxVeinIterations(), member -> {
+        VeinInfo info = VeinInfo.collect(block.getLocation(), cache.maxVeinIterations(), member -> {
             member.setMetadata(METADATA_KEY, new FixedMetadataValue(plugin, null));
         }, VeinInfo.Condition.material(block.getType()), VeinInfo.Condition.excludeMetadata(METADATA_KEY));
 
@@ -94,9 +97,9 @@ public final class XrayListener implements Listener {
     public void onTargetFind(BlockBreakEvent event) {
         Player player = event.getPlayer();
 
-//        if (player.hasPermission(XrayDetection.BYPASS_PERMISSION)) {
-//            return;
-//        }
+        if (player.hasPermission(XrayDetection.BYPASS_PERMISSION)) {
+            return;
+        }
 
         Block block = event.getBlock();
 
@@ -112,7 +115,7 @@ public final class XrayListener implements Listener {
                 continue;
             }
 
-            VeinInfo info = VeinInfo.collect(relative.getLocation(), plugin.getConfigCache().maxVeinIterations(), member -> {
+            VeinInfo info = VeinInfo.collect(relative.getLocation(), cache.maxVeinIterations(), member -> {
                 member.setMetadata(METADATA_KEY, new FixedMetadataValue(plugin, null));
                 locations.add(member.getLocation());
             },
