@@ -1,5 +1,6 @@
 {
   "max-vein-iterations": 10,
+  "console-alerts": true,
   "targets": [
     "COAL_ORE",
     "IRON_ORE",
