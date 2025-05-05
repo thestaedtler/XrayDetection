@@ -67,9 +67,9 @@ public final class XrayListener implements Listener {
     public void onTargetBreak(BlockBreakEvent event) {
         Player player = event.getPlayer();
 
-//        if (player.hasPermission(XrayDetection.BYPASS_PERMISSION)) {
-//            return;
-//        }
+        if (player.hasPermission(XrayDetection.BYPASS_PERMISSION)) {
+            return;
+        }
 
         Block block = event.getBlock();
 
@@ -93,9 +93,9 @@ public final class XrayListener implements Listener {
     public void onTargetFind(BlockBreakEvent event) {
         Player player = event.getPlayer();
 
-//        if (player.hasPermission(XrayDetection.BYPASS_PERMISSION)) {
-//            return;
-//        }
+        if (player.hasPermission(XrayDetection.BYPASS_PERMISSION)) {
+            return;
+        }
 
         Block block = event.getBlock();
 
