@@ -1,5 +1,8 @@
 name: XrayDetection
 author: intagonic
-version: '1.1-SNAPSHOT'
+version: '1.2-BETA'
 main: org.cl.xrayDetection.XrayDetection
 api-version: '1.21'
+commands:
+  xdet:
+    permission: xray.alerts.use

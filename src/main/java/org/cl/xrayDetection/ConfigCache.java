@@ -8,12 +8,14 @@ import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import org.bukkit.Material;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.cl.xrayDetection.util.VariableString;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.util.List;
 import java.util.Set;
 
 public record ConfigCache(
@@ -21,7 +23,7 @@ public record ConfigCache(
         int maxVeinIterations,
         boolean consoleLogging,
         String hoverMessage,
-        String clickCommand
+        List<VariableString> clickCommands
 ) {
     public static ConfigCache cache() throws IOException {
         XrayDetection plugin = JavaPlugin.getPlugin(XrayDetection.class);
@@ -50,15 +52,16 @@ public record ConfigCache(
 
         JsonElement rawHover = obj.get("alert-hover-message");
         String hover = rawHover == null ? null : rawHover.getAsString();
-        JsonElement rawClick = obj.get("alert-click-command");
-        String click = rawClick == null ? null : rawClick.getAsString();
+
+        JsonArray commandArray = obj.getAsJsonArray("alert-click-commands");
+        List<VariableString> commands = XrayDetection.GSON.fromJson(commandArray, new TypeToken<List<VariableString>>() {}.getType());
 
         return new ConfigCache(
                 materialSet,
                 Math.min(obj.get("max-vein-iterations").getAsInt(), 30),
                 obj.get("console-alerts").getAsBoolean(),
                 hover,
-                click
+                commands
         );
     }
 }

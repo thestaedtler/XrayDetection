@@ -24,11 +24,9 @@ import java.util.Set;
 public final class XrayListener implements Listener {
     private static final String METADATA_KEY = "accounted";
     private final XrayDetection plugin;
-    private final ConfigCache cache;
 
     XrayListener(XrayDetection plugin) {
         this.plugin = plugin;
-        this.cache = plugin.getConfigCache();
     }
 
     private void alert(Player target, Material material, boolean exposed, VeinInfo info) {
@@ -39,19 +37,17 @@ public final class XrayListener implements Listener {
                 .append(material.toString()).color(ChatColor.YELLOW)
                 .append(" (vein of " + info.amount() + (info.achievedMaxIterations() ? "+" : "") + ")").color(ChatColor.GRAY);
 
-        if (cache.consoleLogging()) {
+        if (plugin.getConfigCache().consoleLogging()) {
             Bukkit.getLogger().info(builder.build().toPlainText());
         }
 
         BaseComponent finalComponent = builder.build();
 
-        if (cache.hoverMessage() != null) {
-            finalComponent.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(TextComponent.fromLegacy(ChatColor.translateAlternateColorCodes('&', cache.hoverMessage())))));
+        if (plugin.getConfigCache().hoverMessage() != null) {
+            finalComponent.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(TextComponent.fromLegacy(ChatColor.translateAlternateColorCodes('&', plugin.getConfigCache().hoverMessage())))));
         }
 
-        if (cache.clickCommand() != null) {
-            finalComponent.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, cache.clickCommand().replace("[player]", target.getName())));
-        }
+        finalComponent.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/xdet " + target.getName()));
 
         for (Player player : Bukkit.getOnlinePlayers()) {
             if (!player.hasPermission(XrayDetection.ALERT_PERMISSION)) {
@@ -63,7 +59,7 @@ public final class XrayListener implements Listener {
     }
 
     private boolean flags(Material material) {
-        return cache.materials().contains(material);
+        return plugin.getConfigCache().materials().contains(material);
     }
 
     // Direct
@@ -71,9 +67,9 @@ public final class XrayListener implements Listener {
     public void onTargetBreak(BlockBreakEvent event) {
         Player player = event.getPlayer();
 
-        if (player.hasPermission(XrayDetection.BYPASS_PERMISSION)) {
-            return;
-        }
+//        if (player.hasPermission(XrayDetection.BYPASS_PERMISSION)) {
+//            return;
+//        }
 
         Block block = event.getBlock();
 
@@ -81,7 +77,7 @@ public final class XrayListener implements Listener {
             return;
         }
 
-        VeinInfo info = VeinInfo.collect(block.getLocation(), cache.maxVeinIterations(), member -> {
+        VeinInfo info = VeinInfo.collect(block.getLocation(), plugin.getConfigCache().maxVeinIterations(), member -> {
             member.setMetadata(METADATA_KEY, new FixedMetadataValue(plugin, null));
         }, VeinInfo.Condition.material(block.getType()), VeinInfo.Condition.excludeMetadata(METADATA_KEY));
 
@@ -97,9 +93,9 @@ public final class XrayListener implements Listener {
     public void onTargetFind(BlockBreakEvent event) {
         Player player = event.getPlayer();
 
-        if (player.hasPermission(XrayDetection.BYPASS_PERMISSION)) {
-            return;
-        }
+//        if (player.hasPermission(XrayDetection.BYPASS_PERMISSION)) {
+//            return;
+//        }
 
         Block block = event.getBlock();
 
@@ -115,7 +111,7 @@ public final class XrayListener implements Listener {
                 continue;
             }
 
-            VeinInfo info = VeinInfo.collect(relative.getLocation(), cache.maxVeinIterations(), member -> {
+            VeinInfo info = VeinInfo.collect(relative.getLocation(), plugin.getConfigCache().maxVeinIterations(), member -> {
                 member.setMetadata(METADATA_KEY, new FixedMetadataValue(plugin, null));
                 locations.add(member.getLocation());
             },

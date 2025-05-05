@@ -6,7 +6,7 @@
 
     <groupId>org.cl</groupId>
     <artifactId>XrayDetection</artifactId>
-    <version>1.1-SNAPSHOT</version>
+    <version>1.2-BETA</version>
     <packaging>jar</packaging>
 
     <name>XrayDetection</name>
